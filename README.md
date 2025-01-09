@@ -8,7 +8,6 @@ This project is  built with Kotlin and xml, following the MVI architecture patte
 
 - Fetch and display characters.
 - View charachter detalils Blog .
-- Offline mode using Room database.
 
 ## Architecture
 
