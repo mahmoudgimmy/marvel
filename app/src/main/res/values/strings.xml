@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Marvel</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="character_image">Character image</string>
+    <string name="category">Category</string>
+    <string name="name">NAME</string>
+    <string name="description">DESCRIPTION</string>
+    <string name="comics">COMICS</string>
+    <string name="series">SERIES</string>
+    <string name="stories">STORIES</string>
+    <string name="events">EVENTS</string>
+    <string name="related_links">RELATED LINKS</string>
+    <string name="image">Image</string>
+</resources>

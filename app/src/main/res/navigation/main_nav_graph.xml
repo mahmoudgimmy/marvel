@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/charactersListFragment">
+
+    <fragment
+        android:id="@+id/charactersListFragment"
+        android:name="com.example.marvel.features.characterslist.presentation.view.CharactersListFragment"
+        android:label="fragment_characters_list"
+        tools:layout="@layout/fragment_characters_list">
+        <action
+            android:id="@+id/actionCharactersListFragmentToCharacterDetailsFragment"
+            app:destination="@id/characterDetailsFragment">
+            <argument
+                android:name="character"
+                app:argType="com.example.marvel.features.characterslist.domain.entity.MarvelCharacter" />
+
+        </action>
+    </fragment>
+    <fragment
+        android:id="@+id/characterDetailsFragment"
+        android:name="com.example.marvel.features.characterdetails.presentation.view.CharacterDetailsFragment"
+        android:label="fragment_character_details"
+        tools:layout="@layout/fragment_character_details">
+        <argument
+            android:name="character"
+            app:argType="com.example.marvel.features.characterslist.domain.entity.MarvelCharacter" />
+        <action
+            android:id="@+id/action_characterDetailsFragment_to_categoryExpandedFragment"
+            app:destination="@id/categoryExpandedFragment">
+            <argument
+                android:name="category"
+                app:argType="com.example.marvel.features.characterdetails.domain.entity.Category" />
+        </action>
+
+    </fragment>
+    <dialog
+        android:id="@+id/categoryExpandedFragment"
+        android:name="com.example.marvel.features.characterdetails.presentation.view.CategoryExpandedFragment"
+        android:label="fragment_category_expanded"
+        tools:layout="@layout/fragment_category_expanded">
+        <argument
+            android:name="category"
+            app:argType="com.example.marvel.features.characterdetails.domain.entity.Category" />
+
+    </dialog>
+</navigation>
