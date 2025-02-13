@@ -9,8 +9,9 @@ import com.example.marvel.features.characterdetails.domain.repository.CharacterD
 import retrofit2.HttpException
 import java.io.IOException
 
-class ComicsPagingSource(
+class CategoryTypePagingSource(
     private val id: Int,
+    private val categoryType: CategoryType,
     private val repo: CharacterDetailsRepository
 ) : PagingSource<Int, Category>() {
     override fun getRefreshKey(state: PagingState<Int, Category>): Int? {
@@ -25,7 +26,7 @@ class ComicsPagingSource(
         val pageNumber = params.key ?: 1
         return try {
             val response = repo.getCategory(
-                categoryType = CategoryType.COMICS,
+                categoryType = categoryType,
                 input = CategoryInput(offset = pageNumber, characterId = id)
             )
             LoadResult.Page(
