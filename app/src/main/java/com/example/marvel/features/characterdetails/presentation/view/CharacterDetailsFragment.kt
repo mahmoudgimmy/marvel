@@ -20,9 +20,8 @@ import com.example.marvel.core.extensions.collectSharedFlow
 import com.example.marvel.databinding.FragmentCharacterDetailsBinding
 import com.example.marvel.features.characterdetails.presentation.adapter.CategoryAdapter
 import com.example.marvel.features.characterdetails.presentation.adapter.RelatedLinksAdapter
-import com.example.marvel.features.characterdetails.presentation.viewmodel.CharacterDetailsState
+import com.example.marvel.features.characterdetails.presentation.viewmodel.CharacterDetailsContract
 import com.example.marvel.features.characterdetails.presentation.viewmodel.CharacterDetailsViewModel
-import com.example.marvel.features.characterdetails.presentation.viewmodel.CharactersDetailsSideEffect
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlin.getValue
@@ -52,8 +51,7 @@ class CharacterDetailsFragment : Fragment() {
         initViews()
         initObservers()
         initListeners()
-        viewModel.getAllCategories()
-
+        viewModel.setEvent(CharacterDetailsContract.Event.LoadCategories)
     }
 
     private fun initListeners() {
@@ -74,14 +72,14 @@ class CharacterDetailsFragment : Fragment() {
 
     private fun prepareViewStatesObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
-            collectFlow(viewModel.viewState) {
+            collectFlow(viewModel.state) {
                 prepareDetailsView(it)
                 submitCategories(it)
             }
         }
     }
 
-    fun prepareDetailsView(it: CharacterDetailsState) {
+    fun prepareDetailsView(it: CharacterDetailsContract.State) {
         with(binding) {
             tvRelatedLinksSection.isVisible =
                 it.marvelCharacter.relatedLinks.isNotEmpty()
@@ -132,7 +130,7 @@ class CharacterDetailsFragment : Fragment() {
         }
     }
 
-    fun submitCategories(it: CharacterDetailsState) {
+    fun submitCategories(it: CharacterDetailsContract.State) {
         comicAdapter.submitData(lifecycle, it.comics ?: PagingData.empty())
         seriesAdapter.submitData(lifecycle, it.series ?: PagingData.empty())
         storiesAdapter.submitData(lifecycle, it.stories ?: PagingData.empty())
@@ -144,7 +142,7 @@ class CharacterDetailsFragment : Fragment() {
         lifecycleScope.launch {
             collectSharedFlow(viewModel.sideEffect) {
                 when (it) {
-                    is CharactersDetailsSideEffect.OpenCategoryImages -> {
+                    is CharacterDetailsContract.SideEffect.OpenCategoryImages -> {
                         if (it.category.images.isNotEmpty())
                             findNavController().navigate(
                                 CharacterDetailsFragmentDirections.actionCharacterDetailsFragmentToCategoryExpandedFragment(
@@ -153,7 +151,7 @@ class CharacterDetailsFragment : Fragment() {
                             )
                     }
 
-                    is CharactersDetailsSideEffect.OpenExternalLink -> {
+                    is CharacterDetailsContract.SideEffect.OpenExternalLink -> {
                         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it.url))
                         startActivity(browserIntent)
                     }
@@ -165,26 +163,26 @@ class CharacterDetailsFragment : Fragment() {
 
     private fun initViews() {
         comicAdapter = CategoryAdapter {
-            viewModel.openCategoryImages(it)
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
         }
         binding.rvComics.adapter = comicAdapter
         seriesAdapter = CategoryAdapter {
-            viewModel.openCategoryImages(it)
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
         }
         binding.rvSeries.adapter = seriesAdapter
 
         storiesAdapter = CategoryAdapter {
-            viewModel.openCategoryImages(it)
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
         }
         binding.rvStories.adapter = storiesAdapter
 
         eventsAdapter = CategoryAdapter {
-            viewModel.openCategoryImages(it)
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
         }
         binding.rvEvents.adapter = eventsAdapter
 
         linksAdapter = RelatedLinksAdapter {
-            viewModel.openExternalLink(it)
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenExternalLink(it))
         }
         binding.rvRelatedLinks.adapter = linksAdapter
         binding.rvRelatedLinks.isNestedScrollingEnabled = false

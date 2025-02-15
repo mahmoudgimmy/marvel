@@ -15,7 +15,8 @@ import com.example.marvel.core.extensions.collectFlow
 import com.example.marvel.core.extensions.collectSharedFlow
 import com.example.marvel.databinding.FragmentCharactersListBinding
 import com.example.marvel.features.characterslist.presentation.adapter.CharactersAdapter
-import com.example.marvel.features.characterslist.presentation.viewmodel.CharactersListSideEffect
+import com.example.marvel.features.characterslist.presentation.viewmodel.CharacterContract
+import com.example.marvel.features.characterslist.presentation.viewmodel.CharacterContract.Event
 import com.example.marvel.features.characterslist.presentation.viewmodel.CharactersViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -39,7 +40,7 @@ class CharactersListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         initViews()
         initObservers()
-        viewModel.getCharacters()
+        viewModel.setEvent(Event.LoadCharacters)
     }
 
     private fun initObservers() {
@@ -47,20 +48,19 @@ class CharactersListFragment : Fragment() {
             launch {
                 collectSharedFlow(viewModel.sideEffect) {
                     when (it) {
-                        is CharactersListSideEffect.OpenCharacterDetails -> {
+                        is CharacterContract.SideEffect.OpenCharacterDetails -> {
                             findNavController().navigate(
                                 CharactersListFragmentDirections.actionCharactersListFragmentToCharacterDetailsFragment(
                                     it.character
                                 )
                             )
-
                         }
                     }
 
                 }
             }
             launch {
-                collectFlow(viewModel.viewState) {
+                collectFlow(viewModel.state) {
                     pagingAdapter.submitData(lifecycle, it.characters ?: PagingData.empty())
                 }
             }
@@ -76,7 +76,7 @@ class CharactersListFragment : Fragment() {
 
     private fun initViews() {
         pagingAdapter = CharactersAdapter {
-            viewModel.openCharacterDetails(it)
+            viewModel.setEvent(Event.OpenCharacterDetails(it))
         }
         binding.rvCharacters.adapter = pagingAdapter
     }
