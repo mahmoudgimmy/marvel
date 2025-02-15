@@ -2,6 +2,7 @@ package com.example.marvel.core.presentation.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -24,6 +25,8 @@ abstract class CoreViewModel<STATE : CoreState.State,
         EVENT : CoreState.Event>(
     initialState: STATE
 ) : ViewModel(), CoreViewModelInterface<EVENT> {
+
+    abstract val coroutineDispatcher: CoroutineDispatcher
 
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<STATE> = _state.asStateFlow()
