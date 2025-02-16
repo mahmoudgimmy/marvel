@@ -2,14 +2,8 @@ package com.example.marvel.features.characterdetails.presentation.view
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.core.view.isVisible
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
 import androidx.paging.PagingData
@@ -17,17 +11,18 @@ import com.bumptech.glide.Glide
 import com.example.marvel.R
 import com.example.marvel.core.extensions.collectFlow
 import com.example.marvel.core.extensions.collectSharedFlow
+import com.example.marvel.core.presentation.base.BaseFragment
 import com.example.marvel.databinding.FragmentCharacterDetailsBinding
 import com.example.marvel.features.characterdetails.presentation.adapter.CategoryAdapter
 import com.example.marvel.features.characterdetails.presentation.adapter.RelatedLinksAdapter
 import com.example.marvel.features.characterdetails.presentation.viewmodel.CharacterDetailsContract
 import com.example.marvel.features.characterdetails.presentation.viewmodel.CharacterDetailsViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import kotlin.getValue
 
 @AndroidEntryPoint
-class CharacterDetailsFragment : Fragment() {
+class CharacterDetailsFragment :
+    BaseFragment<FragmentCharacterDetailsBinding>(FragmentCharacterDetailsBinding::inflate) {
 
 
     private val viewModel: CharacterDetailsViewModel by viewModels()
@@ -36,26 +31,38 @@ class CharacterDetailsFragment : Fragment() {
     lateinit var storiesAdapter: CategoryAdapter
     lateinit var eventsAdapter: CategoryAdapter
     lateinit var linksAdapter: RelatedLinksAdapter
-    private var _binding: FragmentCharacterDetailsBinding? = null
-    private val binding get() = _binding!!
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        _binding = FragmentCharacterDetailsBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        initViews()
-        initObservers()
-        initListeners()
+    override fun FragmentCharacterDetailsBinding.initializeUI() {
+        comicAdapter = CategoryAdapter {
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
+        }
+        rvComics.adapter = comicAdapter
+        seriesAdapter = CategoryAdapter {
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
+        }
+        rvSeries.adapter = seriesAdapter
+
+        storiesAdapter = CategoryAdapter {
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
+        }
+        rvStories.adapter = storiesAdapter
+
+        eventsAdapter = CategoryAdapter {
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
+        }
+        rvEvents.adapter = eventsAdapter
+
+        linksAdapter = RelatedLinksAdapter {
+            viewModel.setEvent(CharacterDetailsContract.Event.OpenExternalLink(it))
+        }
+        rvRelatedLinks.adapter = linksAdapter
+        rvRelatedLinks.isNestedScrollingEnabled = false
+
         viewModel.setEvent(CharacterDetailsContract.Event.LoadCategories)
     }
 
-    private fun initListeners() {
-        with(binding.detailToolbar) {
+    override fun FragmentCharacterDetailsBinding.registerListeners() {
+        with(detailToolbar) {
             setNavigationIcon(R.drawable.ic_back)
             setNavigationOnClickListener {
                 findNavController().navigateUp()
@@ -63,18 +70,30 @@ class CharacterDetailsFragment : Fragment() {
         }
     }
 
-    private fun initObservers() {
-        prepareRecycleViewsObservers()
-        prepareViewStatesObservers()
-        prepareSideEffectsObservers()
-
+    override fun handleState() {
+        collectFlow(viewModel.state) {
+            prepareDetailsView(it)
+            submitCategories(it)
+        }
     }
 
-    private fun prepareViewStatesObservers() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            collectFlow(viewModel.state) {
-                prepareDetailsView(it)
-                submitCategories(it)
+    override fun handleSideEffect() {
+        collectSharedFlow(viewModel.sideEffect) {
+            when (it) {
+                is CharacterDetailsContract.SideEffect.OpenCategoryImages -> {
+                    if (it.category.images.isNotEmpty())
+                        findNavController().navigate(
+                            CharacterDetailsFragmentDirections.actionCharacterDetailsFragmentToCategoryExpandedFragment(
+                                it.category
+                            )
+                        )
+                }
+
+                is CharacterDetailsContract.SideEffect.OpenExternalLink -> {
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it.url))
+                    startActivity(browserIntent)
+                }
+
             }
         }
     }
@@ -101,35 +120,6 @@ class CharacterDetailsFragment : Fragment() {
 
     }
 
-    fun prepareRecycleViewsObservers() {
-        lifecycleScope.launch {
-            collectFlow(comicAdapter.loadStateFlow) { loadState ->
-                binding.pbLoading.isVisible =
-                    (loadState.refresh is LoadState.Loading) || (loadState.append is LoadState.Loading)
-                binding.rvComics.isVisible = comicAdapter.itemCount != 0
-                binding.tvComicSection.isVisible = comicAdapter.itemCount != 0
-            }
-            collectFlow(seriesAdapter.loadStateFlow) { loadState ->
-                binding.pbLoading.isVisible =
-                    (loadState.refresh is LoadState.Loading) || (loadState.append is LoadState.Loading)
-                binding.rvSeries.isVisible = seriesAdapter.itemCount != 0
-                binding.tvSeriesSection.isVisible = seriesAdapter.itemCount != 0
-            }
-            collectFlow(storiesAdapter.loadStateFlow) { loadState ->
-                binding.pbLoading.isVisible =
-                    (loadState.refresh is LoadState.Loading) || (loadState.append is LoadState.Loading)
-                binding.rvStories.isVisible = storiesAdapter.itemCount != 0
-                binding.tvStoriesSection.isVisible = storiesAdapter.itemCount != 0
-            }
-            collectFlow(eventsAdapter.loadStateFlow) { loadState ->
-                binding.pbLoading.isVisible =
-                    (loadState.refresh is LoadState.Loading) || (loadState.append is LoadState.Loading)
-                binding.rvEvents.isVisible = eventsAdapter.itemCount != 0
-                binding.tvEventsSection.isVisible = eventsAdapter.itemCount != 0
-            }
-        }
-    }
-
     fun submitCategories(it: CharacterDetailsContract.State) {
         comicAdapter.submitData(lifecycle, it.comics ?: PagingData.empty())
         seriesAdapter.submitData(lifecycle, it.series ?: PagingData.empty())
@@ -138,55 +128,31 @@ class CharacterDetailsFragment : Fragment() {
         linksAdapter.submitList(it.marvelCharacter.relatedLinks)
     }
 
-    fun prepareSideEffectsObservers() {
-        lifecycleScope.launch {
-            collectSharedFlow(viewModel.sideEffect) {
-                when (it) {
-                    is CharacterDetailsContract.SideEffect.OpenCategoryImages -> {
-                        if (it.category.images.isNotEmpty())
-                            findNavController().navigate(
-                                CharacterDetailsFragmentDirections.actionCharacterDetailsFragmentToCategoryExpandedFragment(
-                                    it.category
-                                )
-                            )
-                    }
-
-                    is CharacterDetailsContract.SideEffect.OpenExternalLink -> {
-                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it.url))
-                        startActivity(browserIntent)
-                    }
-
-                }
-            }
+    override fun setUpObservers() {
+        collectFlow(comicAdapter.loadStateFlow) { loadState ->
+            binding.pbLoading.isVisible =
+                (loadState.refresh is LoadState.Loading) || (loadState.append is LoadState.Loading)
+            binding.rvComics.isVisible = comicAdapter.itemCount != 0
+            binding.tvComicSection.isVisible = comicAdapter.itemCount != 0
         }
-    }
-
-    private fun initViews() {
-        comicAdapter = CategoryAdapter {
-            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
+        collectFlow(seriesAdapter.loadStateFlow) { loadState ->
+            binding.pbLoading.isVisible =
+                (loadState.refresh is LoadState.Loading) || (loadState.append is LoadState.Loading)
+            binding.rvSeries.isVisible = seriesAdapter.itemCount != 0
+            binding.tvSeriesSection.isVisible = seriesAdapter.itemCount != 0
         }
-        binding.rvComics.adapter = comicAdapter
-        seriesAdapter = CategoryAdapter {
-            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
+        collectFlow(storiesAdapter.loadStateFlow) { loadState ->
+            binding.pbLoading.isVisible =
+                (loadState.refresh is LoadState.Loading) || (loadState.append is LoadState.Loading)
+            binding.rvStories.isVisible = storiesAdapter.itemCount != 0
+            binding.tvStoriesSection.isVisible = storiesAdapter.itemCount != 0
         }
-        binding.rvSeries.adapter = seriesAdapter
-
-        storiesAdapter = CategoryAdapter {
-            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
+        collectFlow(eventsAdapter.loadStateFlow) { loadState ->
+            binding.pbLoading.isVisible =
+                (loadState.refresh is LoadState.Loading) || (loadState.append is LoadState.Loading)
+            binding.rvEvents.isVisible = eventsAdapter.itemCount != 0
+            binding.tvEventsSection.isVisible = eventsAdapter.itemCount != 0
         }
-        binding.rvStories.adapter = storiesAdapter
-
-        eventsAdapter = CategoryAdapter {
-            viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
-        }
-        binding.rvEvents.adapter = eventsAdapter
-
-        linksAdapter = RelatedLinksAdapter {
-            viewModel.setEvent(CharacterDetailsContract.Event.OpenExternalLink(it))
-        }
-        binding.rvRelatedLinks.adapter = linksAdapter
-        binding.rvRelatedLinks.isNestedScrollingEnabled = false
-
     }
 
 }
