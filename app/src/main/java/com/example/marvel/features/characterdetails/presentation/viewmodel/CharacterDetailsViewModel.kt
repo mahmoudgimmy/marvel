@@ -22,44 +22,38 @@ class CharacterDetailsViewModel @Inject constructor(
     private val getCategoryUseCase: GetCategoryUseCase
 ) : CoreViewModel<CharacterDetailsContract.State, CharacterDetailsContract.SideEffect, CharacterDetailsContract.Event>(
     CharacterDetailsContract.State(
-        marvelCharacter =
-        CharacterDetailsFragmentArgs.fromSavedStateHandle(savedStateHandle).character
+        marvelCharacter = CharacterDetailsFragmentArgs.fromSavedStateHandle(savedStateHandle).character
     )
 ) {
-    val args = CharacterDetailsFragmentArgs.fromSavedStateHandle(savedStateHandle)
     private fun getAllCategories() {
         viewModelScope.apply {
             launch(coroutineDispatcher) {
-                getCategoryUseCase.invoke(args.character.id, CategoryType.COMICS)
-                    .cachedIn(viewModelScope)
-                    .collectLatest { comics ->
+                getCategoryUseCase.invoke(state.value.marvelCharacter.id, CategoryType.COMICS)
+                    .cachedIn(viewModelScope).collectLatest { comics ->
                         updateState {
                             it.copy(comics = comics)
                         }
                     }
             }
             launch(coroutineDispatcher) {
-                getCategoryUseCase.invoke(args.character.id, CategoryType.STORIES)
-                    .cachedIn(viewModelScope)
-                    .collectLatest { stories ->
+                getCategoryUseCase.invoke(state.value.marvelCharacter.id, CategoryType.STORIES)
+                    .cachedIn(viewModelScope).collectLatest { stories ->
                         updateState {
                             it.copy(stories = stories)
                         }
                     }
             }
             launch(coroutineDispatcher) {
-                getCategoryUseCase.invoke(args.character.id, CategoryType.SERIES)
-                    .cachedIn(viewModelScope)
-                    .collectLatest { series ->
+                getCategoryUseCase.invoke(state.value.marvelCharacter.id, CategoryType.SERIES)
+                    .cachedIn(viewModelScope).collectLatest { series ->
                         updateState {
                             it.copy(series = series)
                         }
                     }
             }
             launch(coroutineDispatcher) {
-                getCategoryUseCase.invoke(args.character.id, CategoryType.EVENTS)
-                    .cachedIn(viewModelScope)
-                    .collectLatest { events ->
+                getCategoryUseCase.invoke(state.value.marvelCharacter.id, CategoryType.EVENTS)
+                    .cachedIn(viewModelScope).collectLatest { events ->
                         updateState {
                             it.copy(events = events)
                         }

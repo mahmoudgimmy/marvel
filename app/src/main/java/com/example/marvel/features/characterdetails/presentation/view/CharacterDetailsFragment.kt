@@ -37,6 +37,7 @@ class CharacterDetailsFragment :
             viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
         }
         rvComics.adapter = comicAdapter
+
         seriesAdapter = CategoryAdapter {
             viewModel.setEvent(CharacterDetailsContract.Event.OpenCategoryImages(it))
         }
@@ -56,6 +57,7 @@ class CharacterDetailsFragment :
             viewModel.setEvent(CharacterDetailsContract.Event.OpenExternalLink(it))
         }
         rvRelatedLinks.adapter = linksAdapter
+
         rvRelatedLinks.isNestedScrollingEnabled = false
 
         viewModel.setEvent(CharacterDetailsContract.Event.LoadCategories)
@@ -100,22 +102,22 @@ class CharacterDetailsFragment :
 
     fun prepareDetailsView(it: CharacterDetailsContract.State) {
         with(binding) {
-            tvRelatedLinksSection.isVisible =
-                it.marvelCharacter.relatedLinks.isNotEmpty()
-            rvRelatedLinks.isVisible = it.marvelCharacter.relatedLinks.isNotEmpty()
-            tvTile.text = it.marvelCharacter.name
-            tvDescription.text = it.marvelCharacter.description
-            Glide.with(requireContext()).load(it.marvelCharacter.image).centerCrop()
-                .placeholder(R.drawable.ic_place_holder)
-                .into(ivCharacterImage)
-            toolbarLayout.title = it.marvelCharacter.name
-            rvRelatedLinks.isVisible = it.marvelCharacter.relatedLinks.isNotEmpty()
-            tvRelatedLinksSection.isVisible = it.marvelCharacter.relatedLinks.isNotEmpty()
-            tvDescription.isVisible = it.marvelCharacter.description.isNotEmpty()
-            tvDescriptionSection.isVisible = it.marvelCharacter.description.isNotEmpty()
-            tvTile.isVisible = it.marvelCharacter.name.isNotEmpty()
-            tvTileSection.isVisible = it.marvelCharacter.name.isNotEmpty()
-
+            with(it.marvelCharacter) {
+                tvRelatedLinksSection.isVisible = relatedLinks.isNotEmpty()
+                rvRelatedLinks.isVisible = relatedLinks.isNotEmpty()
+                tvTile.text = name
+                tvDescription.text = description
+                Glide.with(requireContext()).load(image).centerCrop()
+                    .placeholder(R.drawable.ic_place_holder)
+                    .into(ivCharacterImage)
+                toolbarLayout.title = name
+                rvRelatedLinks.isVisible = relatedLinks.isNotEmpty()
+                tvRelatedLinksSection.isVisible = relatedLinks.isNotEmpty()
+                tvDescription.isVisible = description.isNotEmpty()
+                tvDescriptionSection.isVisible = description.isNotEmpty()
+                tvTile.isVisible = name.isNotEmpty()
+                tvTileSection.isVisible = name.isNotEmpty()
+            }
         }
 
     }
